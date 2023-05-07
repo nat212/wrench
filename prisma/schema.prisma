@@ -1,20 +1,165 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
-  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING")
+  provider          = "postgresql"
+  url               = env("SUPABASE_POSTGRES_POOLING_URL")
+  directUrl         = env("SUPABASE_POSTGRES_URL")
+  shadowDatabaseUrl = env("SUPABASE_POSTGRES_URL")
 }
 
 model User {
-  id      Int       @id @default(autoincrement())
-  email   String    @unique
-  name    String?
-  roles   String[]
+  id    Int      @id @default(autoincrement())
+  email String   @unique
+  name  String?
+  roles String[]
+}
+
+model ProcessorSocket {
+  code         String        @id
+  label        String
+  manufacturer String
+  Motherboard  Motherboard[]
+  Processor    Processor[]
+}
+
+model MemorySlotType {
+  code        String        @id
+  label       String
+  Motherboard Motherboard[]
+}
+
+model MemoryType {
+  code        String        @id
+  label       String
+  Motherboard Motherboard[]
+}
+
+model RaidType {
+  code         String        @id
+  label        String
+  motherboards Motherboard[] @relation("MotherboardToRaidType")
+}
+
+model M2FormFactor {
+  code         String        @id
+  label        String
+  length       Float?
+  motherboards Motherboard[] @relation("M2FormFactorToMotherboard")
+}
+
+model SataType {
+  code         String        @id
+  label        String
+  speed        Float?
+  motherboards Motherboard[] @relation("MotherboardToSataType")
+}
+
+model EthernetType {
+  code         String        @id
+  label        String
+  speed        Float?
+  motherboards Motherboard[] @relation("EthernetTypeToMotherboard")
+}
+
+model WifiStandard {
+  code         String        @id
+  label        String
+  speed        Float?
+  motherboards Motherboard[] @relation("MotherboardToWifiStandard")
+}
+
+model BluetoothStandard {
+  code         String        @id
+  label        String
+  speed        Float?
+  motherboards Motherboard[] @relation("BluetoothStandardToMotherboard")
+}
+
+model USBStandard {
+  code                     String                      @id
+  label                    String
+  speed                    Float?
+  connectors               String[]
+  motherboardFrontPanelUSB MotherboardFrontUSBHeader[]
+  motherboardRearUSB       MotherboardRearUSBPort[]
+}
+
+model MotherboardRearUSBPort {
+  motherboardId   String
+  usbStandardCode String
+  motherboard     Motherboard @relation(fields: [motherboardId], references: [id])
+  usbStandard     USBStandard @relation(fields: [usbStandardCode], references: [code])
+
+  @@id([motherboardId, usbStandardCode])
+}
+
+model MotherboardFrontUSBHeader {
+  motherboardId   String
+  usbStandardCode String
+  motherboard     Motherboard @relation(fields: [motherboardId], references: [id])
+  usbStandard     USBStandard @relation(fields: [usbStandardCode], references: [code])
+
+  @@id([motherboardId, usbStandardCode])
+}
+
+model MotherboardFormFactor {
+  code         String        @id
+  label        String
+  width        Float?
+  height       Float?
+  motherboards Motherboard[]
+}
+
+model Motherboard {
+  id                  String                      @id @default(uuid())
+  sku                 String                      @unique
+  manufacturer        String
+  name                String
+  width               Float?
+  height              Float?
+  length              Float?
+  launchDate          DateTime?
+  processorSocketCode String
+  chipset             String
+  nvmeSupport         Boolean?
+  memorySlots         Int?
+  memorySlotTypeCode  String
+  maxMemorySize       Float?
+  maxMemorySpeed      Float?
+  memoryTypeCode      String
+  eccSupport          Boolean?
+  memoryChannels      Int?
+  onboardGraphics     Boolean?
+  displayPortOutputs  Int?
+  vgaOutputs          Int?
+  hdmiOutputs         Int?
+  pcieSlots           Int?
+  formFactorCode      String
+  formFactor          MotherboardFormFactor       @relation(fields: [formFactorCode], references: [code])
+  memorySlotType      MemorySlotType              @relation(fields: [memorySlotTypeCode], references: [code])
+  memoryType          MemoryType                  @relation(fields: [memoryTypeCode], references: [code])
+  socket              ProcessorSocket             @relation(fields: [processorSocketCode], references: [code])
+  frontUsbHeaders     MotherboardFrontUSBHeader[]
+  rearUsbPorts        MotherboardRearUSBPort[]
+  bluetoothStandards  BluetoothStandard[]         @relation("BluetoothStandardToMotherboard")
+  ethernetPorts       EthernetType[]              @relation("EthernetTypeToMotherboard")
+  m2Slots             M2FormFactor[]              @relation("M2FormFactorToMotherboard")
+  raidTypes           RaidType[]                  @relation("MotherboardToRaidType")
+  sataPorts           SataType[]                  @relation("MotherboardToSataType")
+  wifiStandards       WifiStandard[]              @relation("MotherboardToWifiStandard")
+}
+
+model Processor {
+  id                  String          @id @default(uuid())
+  sku                 String          @unique
+  manufacturer        String
+  name                String
+  width               Float?
+  height              Float?
+  length              Float?
+  launchDate          DateTime?
+  processorSocketCode String
+  socket              ProcessorSocket @relation(fields: [processorSocketCode], references: [code])
 }
